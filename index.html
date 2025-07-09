@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!-- MODIFIKASI: Game Kartu Cocok Pasangan - 8 Pasangan Bangun Datar -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Card - Rumus Bangun Datar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap');
+    .card-flip { transform-style: preserve-3d; transition: transform 0.6s; }
+    .card-flip.flipped { transform: rotateY(180deg); }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .card-back { transform: rotateY(180deg); }
+    .bounce {
+      animation: bounce 0.5s ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 20%, 60%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      80% { transform: translateY(-5px); }
+    }
+    .shake {
+      animation: shake 0.5s ease-in-out;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .pulse-success {
+      animation: pulse-success 0.6s ease-in-out;
+    }
+    @keyframes pulse-success {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 min-h-screen font-['Nunito']">
+  <div class="container mx-auto px-4 py-6">
+    <div class="text-center mb-8">
+      <h1 class="text-4xl md:text-5xl font-['Fredoka_One'] text-white mb-2 drop-shadow-lg">
+        🧠 Kartu Memori: Rumus Luas Bangun Datar ✨
+      </h1>
+      <p class="text-white text-lg font-semibold">Cocokkan nama bangun dengan rumus luasnya!</p>
+    </div>
+
+    <!-- Materi Gambar Rumus -->
+    <div class="flex justify-center mb-8">
+      <img src="https://raw.githubusercontent.com/mathnology/Permainan-Bangun-Datar/refs/heads/main/Rumus%20Bangun%20Datar.jpg" alt="Materi Rumus Bangun Datar" class="rounded-xl shadow-lg w-full max-w-2xl border-4 border-white/50">
+    </div>
+
+    <div class="flex justify-center gap-6 mb-6">
+      <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-white text-center">
+        <div class="text-2xl font-bold" id="score">0</div>
+        <div class="text-sm">Skor</div>
+      </div>
+      <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-white text-center">
+        <div class="text-2xl font-bold" id="moves">0</div>
+        <div class="text-sm">Langkah</div>
+      </div>
+      <div class="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 text-white text-center">
+        <div class="text-2xl font-bold" id="pairs">0/8</div>
+        <div class="text-sm">Pasangan</div>
+      </div>
+    </div>
+    <div class="max-w-4xl mx-auto">
+      <div class="grid grid-cols-4 md:grid-cols-4 gap-3 md:gap-4" id="gameBoard"></div>
+    </div>
+    <div class="text-center mt-8">
+      <button onclick="resetGame()" class="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg transform hover:scale-105 transition-all duration-200">
+        🔄 Main Lagi
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center mt-10 text-white text-sm opacity-80">
+      &copy; 2025 Mathnology
+    </div>
+  </div>
+
+  <script>
+    let cards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let score = 0;
+    let isProcessing = false;
+
+    function generateCards() {
+      const pairs = [
+        { question: 'Luas Persegi', answer: 'L = s × s' },
+        { question: 'Luas Persegi Panjang', answer: 'L = p × l' },
+        { question: 'Luas Segitiga', answer: 'L = 1/2 × a × t' },
+        { question: 'Luas Jajar Genjang', answer: 'L = a × t' },
+        { question: 'Luas Belah Ketupat', answer: 'L = 1/2 × d1 × d2' },
+        { question: 'Luas Layang-Layang', answer: 'L = 1/2 × d1 × d2' },
+        { question: 'Luas Trapesium', answer: 'L = 1/2 × (a + b) × t' },
+        { question: 'Luas Lingkaran', answer: 'L = π × r²' }
+      ];
+
+      let cardData = [];
+      pairs.forEach((pair, i) => {
+        cardData.push({ id: `q${i}`, type: 'question', content: pair.question, value: i, color: 'from-yellow-400 to-yellow-600' });
+        cardData.push({ id: `a${i}`, type: 'answer', content: pair.answer, value: i, color: 'from-green-400 to-green-600' });
+      });
+
+      return cardData.sort(() => Math.random() - 0.5);
+    }
+
+    function createCardHTML(card, index) {
+      return `
+        <div class="card-container relative h-24 md:h-28 cursor-pointer" onclick="flipCard(${index})">
+          <div class="card-flip w-full h-full relative" id="card-${index}">
+            <div class="card-back bg-gradient-to-br ${card.color} rounded-xl shadow-lg flex items-center justify-center border-2 border-white/30">
+              <div class="text-white font-bold text-base md:text-lg text-center px-2">
+                ${card.content}
+              </div>
+            </div>
+            <div class="card-front bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg flex items-center justify-center border-2 border-white/30">
+              <div class="text-4xl">❓</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function initGame() {
+      cards = generateCards();
+      const gameBoard = document.getElementById('gameBoard');
+      gameBoard.innerHTML = cards.map((card, index) => createCardHTML(card, index)).join('');
+      flippedCards = [];
+      matchedPairs = 0;
+      moves = 0;
+      score = 0;
+      isProcessing = false;
+      updateStats();
+    }
+
+    function flipCard(index) {
+      if (isProcessing || flippedCards.length >= 2) return;
+      const cardElement = document.getElementById(`card-${index}`);
+      const card = cards[index];
+      if (cardElement.classList.contains('flipped') || card.matched) return;
+      cardElement.classList.add('flipped');
+      flippedCards.push({ index, card });
+      if (flippedCards.length === 2) {
+        isProcessing = true;
+        moves++;
+        updateStats();
+        setTimeout(() => checkMatch(), 800);
+      }
+    }
+
+    function checkMatch() {
+      const [first, second] = flippedCards;
+      if (first.card.value === second.card.value && first.card.type !== second.card.type) {
+        first.card.matched = true;
+        second.card.matched = true;
+        matchedPairs++;
+        score += 10;
+        if (matchedPairs === 8) {
+          setTimeout(() => alert(`🎉 Selamat! Skor: ${score}`), 500);
+        }
+      } else {
+        setTimeout(() => {
+          document.getElementById(`card-${first.index}`).classList.remove('flipped');
+          document.getElementById(`card-${second.index}`).classList.remove('flipped');
+        }, 600);
+      }
+      flippedCards = [];
+      isProcessing = false;
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('moves').textContent = moves;
+      document.getElementById('pairs').textContent = `${matchedPairs}/8`;
+    }
+
+    function resetGame() {
+      initGame();
+    }
+
+    window.addEventListener('load', initGame);
+  </script>
+</body>
+</html>
+<!-- partial -->
+  
+</body>
+</html>
